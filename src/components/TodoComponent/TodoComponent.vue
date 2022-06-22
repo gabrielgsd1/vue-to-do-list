@@ -14,10 +14,7 @@
   provide('changeSelectedState', changeSelectedState)
   const filterTodos = ref('')
   const addTodoCheckbox = ref(false)
-  const sorting = ref({
-    typeOfSort: 'date',
-    isAsceding: true
-  })
+  const isSortByDate = ref(true)
   const computedTodos = computed(() => {
     let filter = filterBySelectedMode(todos.value)
     if(filterTodos.value < 1) return filter
@@ -44,7 +41,7 @@
     const JSONsorting = localStorage.getItem('sorting')
     const storageTodos = JSON.parse(JSONtodos)
     const storageSorting = JSON.parse(JSONsorting)
-    sorting.value = storageSorting ?? {isAsceding: true, typeOfSort: 'date'}
+    isSortByDate.value = storageSorting ?? JSON.stringify(false)
     todos.value = storageTodos ?? []
   })
 
@@ -83,7 +80,7 @@
   }
 
   function getIndexOfTodo(id){
-    const todo = computedTodos.value.filter(item => item.id === id)[0]
+    const todo = computedTodos.value.find(item => item.id === id)
     return todos.value.indexOf(todo)
   }
 
@@ -101,8 +98,8 @@
   function cancelTodo(id){
     const index = getIndexOfTodo(id)
     toggleTodo(index)
-    const todoToCancel = editingTodos.value.filter((item) => item.index === index)
-    todos.value[index].text = todoToCancel[0].text
+    const todoToCancel = editingTodos.value.find((item) => item.index === index)
+    todos.value[index].text = todoToCancel.text
   }
 
   function changeCompleted(id){
@@ -124,14 +121,8 @@
     selectedTodoState.value = value 
   }
 
-  function handleSorting(sortingOptions){
-    console.log('called')
-    console.log(sortingOptions)
-    if(!sortingOptions.isAsceding) {
-      console.log('reverse')
-      todos.value.reverse()
-    }
-    if(sortingOptions.typeOfSort === 'date') {
+  function handleSorting(e){
+    if(e.target.value === 'false') {
       handleDateSorting()
     }
     else {
@@ -153,13 +144,8 @@
     })
   }
 
-  function handleSortingChange(){
-    todos.value.reverse()
-  }
-
-  watch(() => sorting.value, (value) => {
-    handleSorting(value)
-    localStorage.setItem('sorting', JSON.stringify(sorting.value))
+  watch(() => isSortByDate.value, () => {
+    localStorage.setItem('sorting', JSON.stringify(isSortByDate.value))
   }, 
   {deep: true})
 
@@ -192,13 +178,9 @@
         <span v-if="selectedTodoState !== 'all'">| Actual Length: {{todosLength}}</span>
     </h2>
     <div class="selectOptions">
-      <select v-model="sorting.typeOfSort">
-        <option value="date" selected>Created</option>
-        <option value="name">Name</option>
-      </select>
-      <select :value="sorting.isAsceding" @change="handleSortingChange">
-        <option :value="true" selected>Ascending</option>
-        <option :value="false">Descending</option>
+      <select v-model="isSortByDate" @change="(e) => handleSorting(e)">
+        <option :value="Boolean(false)" selected>Created</option>
+        <option :value="Boolean(true)">Name</option>
       </select>
     </div>
     
